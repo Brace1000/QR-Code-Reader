@@ -32,7 +32,7 @@ const QRCodeReader = () => {
     };
 
     const handleScanError = (errorMessage) => {
-        ;
+        // Optional: Handle specific scan errors
     };
 
     const startCameraScan = async () => {
@@ -67,15 +67,26 @@ const QRCodeReader = () => {
         setResult(null);
         setError(null);
 
-        const fileScanner = new Html5Qrcode();
         try {
+            // Create a temporary container for file scanning
+            const tempContainerId = 'temp-file-scanner';
+            const tempContainer = document.createElement('div');
+            tempContainer.id = tempContainerId;
+            tempContainer.style.display = 'none';
+            document.body.appendChild(tempContainer);
+
+            const fileScanner = new Html5Qrcode(tempContainerId);
             const decodedText = await fileScanner.scanFile(file, false);
             setResult(decodedText);
+            
+            // Clean up
+            fileScanner.clear();
+            document.body.removeChild(tempContainer);
         } catch (err) {
             console.error("File scan failed.", err);
-            setError("Could not read a QR code from the uploaded image.");
+            setError("Could not read QR code from the image. Please try another image.");
         } finally {
-            fileInputRef.current.value = ""; // Reset file input
+            fileInputRef.current.value = "";
         }
     };
 
@@ -90,6 +101,7 @@ const QRCodeReader = () => {
         stopScanning();
         setResult(null);
         setError(null);
+        fileInputRef.current.value = ""; // Clear file input
     };
 
     // Cleanup on unmount
@@ -128,14 +140,18 @@ const QRCodeReader = () => {
                     onChange={handleFileScan}
                     style={{ display: 'none' }}
                 />
+                {/* Reset button always visible for better UX */}
+                <button className="reset-button" onClick={handleReset}>Reset Scanner</button>
             </div>
 
             {result && (
                 <div className="result-container">
                     <h3>Scanned Result:</h3>
                     <div className="result-text">{result}</div>
-                    <button onClick={handleCopy} className="copy-button">Copy</button>
-                    <button onClick={handleReset} className="reset-button">Scan Again</button>
+                    <div className="result-actions">
+                        <button onClick={handleCopy} className="copy-button">Copy</button>
+                        <button onClick={handleReset} className="reset-button">Scan Again</button>
+                    </div>
                 </div>
             )}
         </div>
